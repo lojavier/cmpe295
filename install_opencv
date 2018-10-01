@@ -1,0 +1,101 @@
+#!/bin/bash
+
+################################################################################
+# Simple script to install OpenCV 3.4 on Raspbian Stretch OS
+#	- https://opencv.org/releases.html
+# 	- https://www.raspberrypi.org/downloads/raspbian/
+#
+# Example:
+# install_opencv.sh 1
+# install_opencv.sh 2
+################################################################################
+
+if [[ $1 -eq 1 ]]; then
+	sudo raspi-config --expand-rootfs
+	sudo reboot
+elif [[ $1 -eq 2 ]]; then
+	sudo apt-get -y purge wolfram-engine
+	sudo apt-get -y purge libreoffice*
+	sudo apt-get -y clean
+	sudo apt-get -y autoremove
+	sudo apt -y autoremove
+
+	sudo apt-get -y update && sudo apt-get -y upgrade
+
+	sudo apt-get install -y build-essential cmake pkg-config
+	sudo apt-get install -y libjpeg-dev libtiff5-dev libjasper-dev libpng12-dev
+	sudo apt-get install -y libavcodec-dev libavformat-dev libswscale-dev libv4l-dev
+	sudo apt-get install -y libxvidcore-dev libx264-dev
+	sudo apt-get install -y libgtk2.0-dev libgtk-3-dev
+	sudo apt-get install -y libatlas-base-dev gfortran
+	sudo apt-get install -y python2.7-dev python3-dev
+	sudo apt-get install -y python-picamera python3-picamera
+
+	cd ~/
+	git clone -b '3.4' https://github.com/opencv/opencv.git
+	#cd ~/opencv/
+	#wget -O opencv.zip https://github.com/Itseez/opencv/archive/3.3.0.zip
+	#wget -O opencv.zip https://github.com/opencv/opencv/archive/3.4.zip
+	#unzip opencv.zip
+
+	cd ~/
+	git clone -b '3.4' https://github.com/opencv/opencv_contrib.git
+	#cd ~/opencv_contrib/
+	#wget -O opencv_contrib.zip https://github.com/Itseez/opencv_contrib/archive/3.3.0.zip
+	#wget -O opencv_contrib.zip https://github.com/opencv/opencv_contrib/archive/3.4.zip
+	#unzip opencv_contrib.zip
+
+	sudo apt-get install -y python-pip python3-pip
+	#wget https://bootstrap.pypa.io/get-pip.py
+	#sudo python get-pip.py
+	#sudo python3 get-pip.py
+
+	sudo pip install virtualenv virtualenvwrapper
+	sudo rm -rf ~/.cache/pip
+	sudo pip3 install virtualenv virtualenvwrapper
+	sudo rm -rf ~/.cache/pip
+
+	PROFILE=~/.profile
+	echo -e "\n# virtualenv and virtualenvwrapper" >> $PROFILE
+	echo "export WORKON_HOME=$HOME/.virtualenvs" >> $PROFILE
+	echo "export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3" >> $PROFILE
+	echo "source /usr/local/bin/virtualenvwrapper.sh" >> $PROFILE
+	source $PROFILE
+
+	mkvirtualenv cv -p python2
+	source $PROFILE
+	mkvirtualenv cv -p python3
+	source $PROFILE
+	workon cv
+
+	pip install numpy
+
+	cd ~/opencv/
+	mkdir -p build
+	cd build/
+	cmake -D CMAKE_BUILD_TYPE=RELEASE \
+	      -D CMAKE_INSTALL_PREFIX=/usr/local \
+	      -D INSTALL_C_EXAMPLES=ON \
+	      -D INSTALL_PYTHON_EXAMPLES=ON \
+	      -D OPENCV_EXTRA_MODULES_PATH=~/opencv_contrib/modules \
+	      -D BUILD_EXAMPLES=ON ..
+
+	#workon cv
+	#sudo nano /etc/dphys-swapfile
+	# echo -e "\n\tOpen new ssh session to Raspberry Pi, copy & paste to commandline, and execute:\n\n\t\tworkon cv && sudo nano /etc/dphys-swapfile\n\n\tEdit CONF_SWAPSIZE variable, 'CONF_SWAPSIZE=1024'\n\n"
+	# sleep 300
+
+	sudo sed -i 's/CONF_SWAPSIZE=100/#CONF_SWAPSIZE=100\nCONF_SWAPSIZE=1024/g' dphys-swapfile
+	sudo /etc/init.d/dphys-swapfile stop
+	sudo /etc/init.d/dphys-swapfile start
+
+	make -j4
+	sudo make install
+	sudo ldconfig
+else
+	echo -e "\ninstall_opencv.sh\n"
+	echo -e	"HOW TO USE:\n"
+	echo -e	"Params:"
+	echo -e	"\t1. Expand filesystem (requires reboot)"
+	echo -e	"\t2. After 1 is complete, proceed with installation of OpenCV\n"
+fi
