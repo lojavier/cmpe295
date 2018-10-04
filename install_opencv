@@ -10,45 +10,55 @@
 # install_opencv.sh 2
 ################################################################################
 
+################################################################################
+# STEP 1
+# 	- Expand root filesystem
+################################################################################
 if [[ $1 -eq 1 ]]; then
 	sudo raspi-config --expand-rootfs
 	sudo reboot
+	
+################################################################################
+# STEP 2
+#	- Remove uneccessary packages/libraries
+#	- Install neccesary packages/libraries for OpenCV preparation
+################################################################################
 elif [[ $1 -eq 2 ]]; then
-	sudo apt-get -y purge wolfram-engine
-	sudo apt-get -y purge libreoffice*
-	sudo apt-get -y clean
-	sudo apt-get -y autoremove
-	sudo apt -y autoremove
+	sudo apt-get purge -y wolfram-engine
+	sudo apt-get purge -y libreoffice*
+	sudo apt-get clean -y
+	sudo apt-get autoremove -y
 
-	sudo apt-get -y update && sudo apt-get -y upgrade
-
-	sudo apt-get install -y build-essential cmake pkg-config
-	sudo apt-get install -y libjpeg-dev libtiff5-dev libjasper-dev libpng12-dev
+	sudo apt-get update -y
+	sudo apt-get upgrade -y
+	sudo rpi-update
+	
+	sudo apt-get install -y build-essential git cmake pkg-config
+	sudo apt-get install -y libtbb2 libtbb-dev libjpeg-dev libjpeg8-dev  libtiff5-dev libjasper-dev libpng12-dev
 	sudo apt-get install -y libavcodec-dev libavformat-dev libswscale-dev libv4l-dev
 	sudo apt-get install -y libxvidcore-dev libx264-dev
 	sudo apt-get install -y libgtk2.0-dev libgtk-3-dev
+	sudo apt-get install -y libcanberra-gtk*
 	sudo apt-get install -y libatlas-base-dev gfortran
-	sudo apt-get install -y python2.7-dev python3-dev
+	sudo apt-get install -y python-dev python2.7-dev python3-dev python-numpy
 	sudo apt-get install -y python-picamera python3-picamera
+	
+	sudo apt-get clean -y
+	sudo apt-get autoremove -y
+
+################################################################################
+# STEP 3
+#	- Clone & install OpenCV packages/libraries via GitHub
+################################################################################
+elif [[ $1 -eq 3 ]]; then
 
 	cd ~/
 	git clone -b '3.4' https://github.com/opencv/opencv.git
-	#cd ~/opencv/
-	#wget -O opencv.zip https://github.com/Itseez/opencv/archive/3.3.0.zip
-	#wget -O opencv.zip https://github.com/opencv/opencv/archive/3.4.zip
-	#unzip opencv.zip
 
 	cd ~/
 	git clone -b '3.4' https://github.com/opencv/opencv_contrib.git
-	#cd ~/opencv_contrib/
-	#wget -O opencv_contrib.zip https://github.com/Itseez/opencv_contrib/archive/3.3.0.zip
-	#wget -O opencv_contrib.zip https://github.com/opencv/opencv_contrib/archive/3.4.zip
-	#unzip opencv_contrib.zip
 
 	sudo apt-get install -y python-pip python3-pip
-	#wget https://bootstrap.pypa.io/get-pip.py
-	#sudo python get-pip.py
-	#sudo python3 get-pip.py
 
 	sudo pip install virtualenv virtualenvwrapper
 	sudo rm -rf ~/.cache/pip
@@ -59,7 +69,7 @@ elif [[ $1 -eq 2 ]]; then
 	echo -e "\n# virtualenv and virtualenvwrapper" >> $PROFILE
 	echo "export WORKON_HOME=$HOME/.virtualenvs" >> $PROFILE
 	echo "export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3" >> $PROFILE
-	echo "source /usr/local/bin/virtualenvwrapper.sh" >> $PROFILE
+	echo -e "source /usr/local/bin/virtualenvwrapper.sh\n" >> $PROFILE
 	source $PROFILE
 
 	mkvirtualenv cv -p python2
@@ -69,29 +79,42 @@ elif [[ $1 -eq 2 ]]; then
 	workon cv
 
 	pip install numpy
+	pip3 install numpy
 
 	cd ~/opencv/
 	mkdir -p build
 	cd build/
 	cmake -D CMAKE_BUILD_TYPE=RELEASE \
 	      -D CMAKE_INSTALL_PREFIX=/usr/local \
+	      -D OPENCV_EXTRA_MODULES_PATH=~/opencv_contrib/modules \
+	      -D ENABLE_NEON=ON \
+              -D ENABLE_VFPV3=ON \
+              -D BUILD_TESTS=ON \
 	      -D INSTALL_C_EXAMPLES=ON \
 	      -D INSTALL_PYTHON_EXAMPLES=ON \
-	      -D OPENCV_EXTRA_MODULES_PATH=~/opencv_contrib/modules \
 	      -D BUILD_EXAMPLES=ON ..
 
-	#workon cv
-	#sudo nano /etc/dphys-swapfile
-	# echo -e "\n\tOpen new ssh session to Raspberry Pi, copy & paste to commandline, and execute:\n\n\t\tworkon cv && sudo nano /etc/dphys-swapfile\n\n\tEdit CONF_SWAPSIZE variable, 'CONF_SWAPSIZE=1024'\n\n"
-	# sleep 300
-
-	sudo sed -i 's/CONF_SWAPSIZE=100/#CONF_SWAPSIZE=100\nCONF_SWAPSIZE=1024/g' dphys-swapfile
+	sudo sed -i 's/CONF_SWAPSIZE=100/#CONF_SWAPSIZE=100\nCONF_SWAPSIZE=1024/g' /etc/dphys-swapfile
 	sudo /etc/init.d/dphys-swapfile stop
 	sudo /etc/init.d/dphys-swapfile start
 
 	make -j4
 	sudo make install
 	sudo ldconfig
+	
+	sudo sed -i 's/CONF_SWAPSIZE=1024/#CONF_SWAPSIZE=1024/g' /etc/dphys-swapfile
+	sudo sed -i 's/#CONF_SWAPSIZE=100/CONF_SWAPSIZE=100/g' /etc/dphys-swapfile
+	sudo /etc/init.d/dphys-swapfile stop
+	sudo /etc/init.d/dphys-swapfile start
+
+	cd ~/.virtualenvs/cv/lib/python2.7/site-packages/
+	ln -s /usr/local/lib/python2.7/site-packages/cv2.so cv2.so
+	
+	cd /usr/local/lib/python3.5/site-packages/
+	sudo mv cv2.cpython-35m-arm-linux-gnueabihf.so cv2.so
+	cd ~/.virtualenvs/cv/lib/python3.5/site-packages/
+	ln -s /usr/local/lib/python3.5/site-packages/cv2.so cv2.so
+	
 else
 	echo -e "\ninstall_opencv.sh\n"
 	echo -e	"HOW TO USE:\n"
