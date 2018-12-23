@@ -9,6 +9,8 @@ sudo apt-get autoremove -y
 
 sudo apt-get update -y
 sudo apt-get upgrade -y
+sudo apt-get install -y busybox
 sudo rpi-update
 
-
+sudo apt-get autoremove -y
+sudo apt-get clean -y
