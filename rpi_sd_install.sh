@@ -2,20 +2,25 @@
 
 cd ~/
 
-# sudo apt-get clean -y
-# sudo apt-get autoremove -y
-# sudo apt-get update -y
-# sudo apt-get upgrade -y
-# sudo apt-get install -y unzip
-# sudo apt-get clean -y
-# sudo apt-get autoremove -y
+if [[ 1 -eq 0 ]]; then
+	sudo apt-get clean -y
+	sudo apt-get autoremove -y
+	sudo apt-get update -y
+	sudo apt-get upgrade -y
+	sudo apt-get install -y unzip
+	sudo apt-get clean -y
+	sudo apt-get autoremove -y
+fi
 
 USER=`whoami`
 USER_DIR="/home/${USER}/"
 DOWNLOAD_DIR="${USER_DIR}Downloads/"
-RPI_OS_URL="https://downloads.raspberrypi.org/raspbian_lite_latest"
-RPI_OS_ZIP="raspbian-stretch-lite.zip"
-RPI_OS_IMG="raspbian-stretch-lite.img"
+RPI_OS_URL="https://downloads.raspberrypi.org/raspbian_latest"
+# RPI_OS_URL="https://downloads.raspberrypi.org/raspbian_lite_latest"
+RPI_OS_ZIP="raspbian-stretch.zip"
+RPI_OS_IMG="raspbian-stretch.img"
+# RPI_OS_ZIP="raspbian-stretch-lite.zip"
+# RPI_OS_IMG="raspbian-stretch-lite.img"
 RPI_OS_ZIP_PATH="${DOWNLOAD_DIR}${RPI_OS_ZIP}"
 RPI_OS_IMG_PATH="${DOWNLOAD_DIR}${RPI_OS_IMG}"
 RPI_OS_SEARCH="${DOWNLOAD_DIR}*${RPI_OS_IMG}"
