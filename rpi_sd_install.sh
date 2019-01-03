@@ -73,7 +73,7 @@ echo -e "${DHCPCD_TEXT}"
 if [[ 1 -eq 0 ]]; then
 	mkdir -vp $DOWNLOAD_DIR
 	wget -v $RPI_OS_URL -O $RPI_OS_ZIP_PATH
-	unzip -v $RPI_OS_ZIP_PATH -d $DOWNLOAD_DIR
+	unzip $RPI_OS_ZIP_PATH -d $DOWNLOAD_DIR
 	mv -vf $RPI_OS_SEARCH $RPI_OS_IMG_PATH
 	echo ""
 fi

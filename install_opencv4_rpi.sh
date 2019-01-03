@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ################################################################################
-# Simple script to install OpenCV 3.4 on Raspbian Stretch OS
+# Simple script to install OpenCV 4 on Raspbian Stretch OS
 #	- https://opencv.org/releases.html
 # 	- https://www.raspberrypi.org/downloads/raspbian/
 #
@@ -11,24 +11,22 @@
 ################################################################################
 OPENCV_VERSION="4.0.1"
 cd ~/
-USER=`whoami`
-USER_DIR="/home/${USER}/"
-PROFILE_FILE="${USER_DIR}.profile"
+PROFILE_FILE="${HOME}/.profile"
 
 ################################################################################
 # STEP 1
 # 	- Expand root filesystem
 ################################################################################
-if [[ $1 -eq 1 ]]; then
-	sudo raspi-config --expand-rootfs
-	sudo reboot
+# if [[ $1 -eq 1 ]]; then
+# 	sudo raspi-config --expand-rootfs
+# 	sudo reboot
 	
 ################################################################################
 # STEP 2
 #	- Remove uneccessary packages/libraries
 #	- Install neccesary packages/libraries for OpenCV preparation
 ################################################################################
-elif [[ $1 -eq 2 ]]; then
+# elif [[ $1 -eq 2 ]]; then
 	sudo apt-get purge -y wolfram-engine
 	sudo apt-get purge -y libreoffice*
 	sudo apt-get clean -y
@@ -63,7 +61,7 @@ elif [[ $1 -eq 2 ]]; then
 # STEP 3
 #	- Clone & install OpenCV packages/libraries via GitHub
 ################################################################################
-elif [[ $1 -eq 3 ]]; then
+# elif [[ $1 -eq 3 ]]; then
 
 	wget -O opencv.zip "https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip"
 	wget -O opencv_contrib.zip "https://github.com/opencv/opencv_contrib/archive/${OPENCV_VERSION}.zip"
@@ -85,9 +83,8 @@ elif [[ $1 -eq 3 ]]; then
 
 	mkvirtualenv cv -p python3
 
-elif [[ $1 -eq 4 ]]; then
+# elif [[ $1 -eq 4 ]]; then
 
-	source $PROFILE_FILE
 	workon cv
 
 	pip3 install numpy
@@ -113,7 +110,7 @@ elif [[ $1 -eq 4 ]]; then
 	sudo /etc/init.d/dphys-swapfile stop
 	sudo /etc/init.d/dphys-swapfile start
 
-	make -j4
+	make -j1
 	sudo make install
 	sudo ldconfig
 	
@@ -123,8 +120,13 @@ elif [[ $1 -eq 4 ]]; then
 	sudo /etc/init.d/dphys-swapfile start
 
 	cd ~/.virtualenvs/cv/lib/python3.5/site-packages/
-	ln -s /usr/local/python/cv2 cv2
+	ln -s /usr/local/lib/python3.5/site-packages/cv2 cv2
 	cd ~/
+
+	wget https://s3-us-west-2.amazonaws.com/static.pyimagesearch.com/ball-tracking/ball-tracking.zip
+	unzip ball-tracking.zip
+
+	sudo reboot
 
 else
 	echo -e "\ninstall_opencv.sh\n"
