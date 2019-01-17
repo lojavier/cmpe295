@@ -78,7 +78,10 @@ while True:
 		# centroid
 		c = max(cnts, key=cv2.contourArea)
 		((x, y), radius) = cv2.minEnclosingCircle(c)
+
+		# insert API for robotic arm movement. X,Y coordinate and radius of object
 		print ("x: %d y: %d r: %d" % (int(x), int(y), int(radius)))
+
 		M = cv2.moments(c)
 		center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
 
