@@ -45,14 +45,7 @@ PROFILE_FILE="${HOME}/.profile"
 	sudo apt-get install -y libatlas-base-dev gfortran
 	sudo apt-get install -y python3-dev python3-picamera python3-pip
 
-	# sudo apt-get install -y libtbb2 libtbb-dev libjpeg-dev libjpeg8-dev  libtiff5-dev libjasper-dev libpng12-dev
-	# sudo apt-get install -y libavcodec-dev libavformat-dev libswscale-dev libv4l-dev
-	# sudo apt-get install -y libxvidcore-dev libx264-dev
-	# sudo apt-get install -y libgtk2.0-dev libgtk-3-dev
-	# sudo apt-get install -y libcanberra-gtk*
-	# sudo apt-get install -y libatlas-base-dev gfortran
-	# sudo apt-get install -y python-dev python2.7-dev python3-dev python-numpy
-	# sudo apt-get install -y python-picamera python3-picamera
+	sudo modprobe bcm2835-v4l2
 	
 	sudo apt-get clean -y
 	sudo apt-get autoremove -y

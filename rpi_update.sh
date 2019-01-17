@@ -37,6 +37,8 @@ sudo pip3 install opencv-contrib-python
 sudo pip3 install imutils
 sudo pip3 install "picamera[array]"
 
+sudo modprobe bcm2835-v4l2
+
 # sudo pip3 install opencv-contrib-python-headless
 # sudo pip3 install opencv-python
 # sudo pip3 install opencv-python-headless
