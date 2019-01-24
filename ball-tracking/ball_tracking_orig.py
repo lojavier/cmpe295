@@ -10,15 +10,6 @@ import argparse
 import cv2
 import imutils
 import time
-import socket
-
-TCP_IP = 'localhost'
-# TCP_IP = 'ip-ec2-instance'
-TCP_PORT = 60001
-BUFFER_SIZE = 1024
-
-frameWidth = 600
-frameHeight = 333
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -47,7 +38,6 @@ else:
 # allow the camera or video file to warm up
 time.sleep(2.0)
 
-time_start = time.time()
 # keep looping
 while True:
 	# grab the current frame
@@ -63,7 +53,7 @@ while True:
 
 	# resize the frame, blur it, and convert it to the HSV
 	# color space
-	frame = imutils.resize(frame, width=frameWidth)
+	frame = imutils.resize(frame, width=600)
 	blurred = cv2.GaussianBlur(frame, (11, 11), 0)
 	hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
@@ -88,6 +78,7 @@ while True:
 		# centroid
 		c = max(cnts, key=cv2.contourArea)
 		((x, y), radius) = cv2.minEnclosingCircle(c)
+		print("x: %d y: %d r: %d" % (x, y, radius))
 		M = cv2.moments(c)
 		center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
 
@@ -99,43 +90,27 @@ while True:
 				(0, 255, 255), 2)
 			cv2.circle(frame, center, 5, (0, 0, 255), -1)
 
-		# print("dx: %d dy: %d r: %d" % (x-(frameWidth/2), y-(frameHeight/2), radius))
-
 	# update the points queue
 	pts.appendleft(center)
 
 	# loop over the set of tracked points
 	for i in range(1, len(pts)):
-		# if either of the tracked points are None, ignore them
+		# if either of the tracked points are None, ignore
+		# them
 		if pts[i - 1] is None or pts[i] is None:
 			continue
 
-		# otherwise, compute the thickness of the line and draw the connecting lines
+		# otherwise, compute the thickness of the line and
+		# draw the connecting lines
 		thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 2.5)
 		cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
 
 	# show the frame to our screen
 	cv2.imshow("Frame", frame)
-	
-	if time.time() - time_start > 1:
-		cv2.imwrite('braccetto.jpg', frame)
-		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		s.connect((TCP_IP, TCP_PORT))
-		f = open('braccetto.jpg','rb')
-		while True:
-			l = f.read(BUFFER_SIZE)
-			while (l):
-				s.send(l)
-				l = f.read(BUFFER_SIZE)
-			if not l:
-				f.close()
-				break
-		s.close()
-		time_start = time.time()
+	key = cv2.waitKey(1) & 0xFF
 
-	# key = cv2.waitKey(1) & 0xFF
 	# if the 'q' key is pressed, stop the loop
-	if cv2.waitKey(1) & 0xFF == ord("q"):
+	if key == ord("q"):
 		break
 
 # if we are not using a video file, stop the camera video stream
