@@ -35,10 +35,10 @@ BASHRC_FILE="${HOME}/.bashrc"
 	sudo apt-get upgrade -y
 	
 	sudo apt-get install -y build-essential git cmake unzip pkg-config
-	sudo apt-get install -y libjpeg-dev libpng-dev libtiff-dev
+	sudo apt-get install -y libjpeg-dev libpng-dev libpng12-dev libtiff-dev libtiff5-dev
 	sudo apt-get install -y libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libavdevice-dev
 	sudo apt-get install -y libxvidcore-dev libx264-dev libgstreamer1.0-dev
-	sudo apt-get install -y libgtk-3-dev libgtk2.0-dev
+	sudo apt-get install -y libgtk2.0-dev libgtk-3-dev
 	sudo apt-get install -y libcanberra-gtk*
 	sudo apt-get install -y libatlas-base-dev gfortran
 	sudo apt-get install -y python3-dev python3-picamera python3-pip
@@ -114,6 +114,12 @@ BASHRC_FILE="${HOME}/.bashrc"
 	cd ~/
 	wget https://s3-us-west-2.amazonaws.com/static.pyimagesearch.com/ball-tracking/ball-tracking.zip
 	unzip ball-tracking.zip
+
+	wget https://s3-us-west-2.amazonaws.com/static.pyimagesearch.com/opencv-yolo/yolo-object-detection.zip
+	unzip yolo-object-detection.zip
+
+	wget https://s3-us-west-2.amazonaws.com/static.pyimagesearch.com/pi-object-detection/pi-object-detection.zip
+	unzip pi-object-detection.zip
 
 	sudo reboot
 

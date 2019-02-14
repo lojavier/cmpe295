@@ -17,7 +17,7 @@ TCP_IP = '18.236.188.150'
 TCP_PORT = 60001
 BUFFER_SIZE = 1024
 
-frameWidth = 600
+frameWidth = 1200
 frameHeight = 333
 
 # construct the argument parse and parse the arguments
@@ -99,7 +99,7 @@ while True:
 				(0, 255, 255), 2)
 			cv2.circle(frame, center, 5, (0, 0, 255), -1)
 
-		# print("dx: %d dy: %d r: %d" % (x-(frameWidth/2), y-(frameHeight/2), radius))
+		print("{ x:%d, y:%d, r:%d }" % (x-(frameWidth/2), (frameHeight/2)-y, radius))
 
 	# update the points queue
 	pts.appendleft(center)
@@ -115,28 +115,28 @@ while True:
 		cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
 
 	# show the frame to our screen
-	# cv2.imshow("Frame", frame)
+	cv2.imshow("Frame", frame)
 	
-	if time.time() - time_start > 1:
-		try:
-			s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			s.connect((TCP_IP, TCP_PORT))
-
-			cv2.imwrite('braccetto.jpg', frame)
-			f = open('braccetto.jpg','rb')
-			while True:
-				l = f.read(BUFFER_SIZE)
-				while (l):
-					s.send(l)
+	if True:
+		if time.time() - time_start > 1:
+			try:
+				cv2.imwrite('braccetto.jpg', frame)
+				s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+				s.connect((TCP_IP, TCP_PORT))
+				f = open('braccetto.jpg','rb')
+				while True:
 					l = f.read(BUFFER_SIZE)
-				if not l:
-					f.close()
-					break
-			s.close()
-		except Exception as e:
-			print("Error: %s" % e)
-			s.close()
-		time_start = time.time()
+					while (l):
+						s.send(l)
+						l = f.read(BUFFER_SIZE)
+					if not l:
+						f.close()
+						break
+				s.close()
+			except Exception as e:
+				print("Error: %s" % e)
+				s.close()
+			time_start = time.time()
 
 	# key = cv2.waitKey(1) & 0xFF
 	# if the 'q' key is pressed, stop the loop
