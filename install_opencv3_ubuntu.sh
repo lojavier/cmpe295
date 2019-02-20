@@ -34,7 +34,7 @@ BASHRC_FILE="${HOME}/.bashrc"
 	sudo apt-get update -y
 	sudo apt-get upgrade -y
 	
-	sudo apt-get install -y build-essential git cmake unzip pkg-config
+	sudo apt-get install -y build-essential git cmake unzip pkg-config curl
 	sudo apt-get install -y libjpeg-dev libpng-dev libpng12-dev libtiff-dev libtiff5-dev
 	sudo apt-get install -y libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libavdevice-dev
 	sudo apt-get install -y libxvidcore-dev libx264-dev libgstreamer1.0-dev
@@ -76,8 +76,13 @@ BASHRC_FILE="${HOME}/.bashrc"
 
 	workon cv
 
-	pip3 install numpy
-	pip3 install imutils
+	pip3 install --upgrade numpy
+	pip3 install --upgrade imutils
+	pip3 install --upgrade scikit-learn
+	pip3 install --upgrade matplotlib
+	pip3 install --upgrade pillow
+	pip3 install --upgrade tensorflow
+	pip3 install --upgrade keras
 
 	cd ~/opencv/
 	mkdir -p build
@@ -89,6 +94,8 @@ BASHRC_FILE="${HOME}/.bashrc"
 		-D OPENCV_ENABLE_NONFREE=ON \
 		-D OPENCV_EXTRA_MODULES_PATH=~/opencv_contrib/modules \
 		-D PYTHON_EXECUTABLE=~/.virtualenvs/cv/bin/python3 \
+		-D ENABLE_NEON=ON \
+    	-D ENABLE_VFPV3=ON \
 		-D WITH_GSTREAMER=ON \
 		-D WITH_FFMPEG=ON \
 		-D WITH_TBB=ON \
@@ -120,6 +127,22 @@ BASHRC_FILE="${HOME}/.bashrc"
 
 	wget https://s3-us-west-2.amazonaws.com/static.pyimagesearch.com/pi-object-detection/pi-object-detection.zip
 	unzip pi-object-detection.zip
+
+	sudo modprobe bcm2835-v4l2
+
+	sudo apt-get install openjdk-8-jdk
+	echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
+	curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
+	sudo apt-get update && sudo apt-get install -y bazel
+
+	wget https://s3-us-west-2.amazonaws.com/static.pyimagesearch.com/machine-learning-python/python-machine-learning.zip
+	unzip python-machine-learning.zip
+
+	wget https://s3-us-west-2.amazonaws.com/static.pyimagesearch.com/keras-save-load/keras-save-load.zip
+	unzip keras-save-load.zip
+
+	wget https://s3-us-west-2.amazonaws.com/static.pyimagesearch.com/keras-tutorial/keras-tutorial.zip
+	unzip keras-tutorial.zip
 
 	sudo reboot
 

@@ -119,6 +119,8 @@ PROFILE_FILE="${HOME}/.profile"
 	wget https://s3-us-west-2.amazonaws.com/static.pyimagesearch.com/ball-tracking/ball-tracking.zip
 	unzip ball-tracking.zip
 
+	sudo modprobe bcm2835-v4l2
+
 	sudo reboot
 
 else
