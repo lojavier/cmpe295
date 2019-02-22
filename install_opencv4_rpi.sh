@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# x_pos = [600, 1300]
+# y_pos = [-500, 600]
+# z_pos = [700, 1200]
+# r.set_cartesian([[600,80,1200],[0,0,1,0]])
+
 ################################################################################
 # Simple script to install OpenCV 4 on Raspbian Stretch OS
 #	- https://opencv.org/releases.html
