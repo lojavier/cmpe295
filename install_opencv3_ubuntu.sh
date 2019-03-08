@@ -160,6 +160,12 @@ fi
 # wget https://s3-us-west-2.amazonaws.com/static.pyimagesearch.com/keras-tutorial/keras-tutorial.zip
 # unzip keras-tutorial.zip
 
+# wget https://www.pyimagesearch.com/wp-content/uploads/2015/01/auto-canny.zip
+# unzip auto-canny.zip
+
+# wget wget https://s3-us-west-2.amazonaws.com/static.pyimagesearch.com/holistically-nested-edge-detection/holistically-nested-edge-detection.zip
+# unzip holistically-nested-edge-detection.zip
+
 # sudo reboot
 
 # else
