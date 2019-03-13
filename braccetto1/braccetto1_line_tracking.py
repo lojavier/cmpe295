@@ -1,5 +1,8 @@
 #!python
 # Usage: python line_tracking.py -r y -v y -d n
+# http://einsteiniumstudios.com/beaglebone-opencv-line-following-robot.html
+# https://medium.com/@const.toporov/line-following-robot-with-opencv-and-contour-based-approach-417b90f2c298
+# https://medium.com/@mrhwick/simple-lane-detection-with-opencv-bfeb6ae54ec0
 import cv2
 from imutils.video import VideoStream
 from imutils.video import FPS
@@ -10,6 +13,9 @@ import imutils
 import time
 import abb
 import geom_util as geom
+import roi
+import track_cv as track
+import track_conf as tconf
 
 ap = argparse.ArgumentParser()
 ap.add_argument("-r", "--robot", help="enable robot mode")
@@ -47,18 +53,6 @@ maxLineGap = 10		# Maximum allowed gap between line segments to treat them as si
 apertureSize = 3
 FRAME_WIDTH = 800
 
-T = 120
-
-def select_black(image):
-    # converted = convert_hls(image)
-    converted = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
-    # white color mask
-    lower = np.uint8([  0,  0,   0])
-    upper = np.uint8([5, 5, 5])
-    black_mask = cv2.inRange(converted, lower, upper)
-    mask = black_mask
-    return cv2.bitwise_and(image, image, mask = mask)
-
 def auto_canny(img, sigma=0.1):
 	global apertureSize
 	# compute the median of the single channel pixel intensities
@@ -68,78 +62,6 @@ def auto_canny(img, sigma=0.1):
 	upper = int(min(255, (1.0 + sigma) * v))
 	edged = cv2.Canny(img, lower, upper, apertureSize)
 	return edged
-
-def crop_roi(img, vertices):
-	mask = np.zeros_like(img)
-	match_mask_color = 255
-
-	cv2.fillPoly(mask, vertices, match_mask_color)
-	masked_image = cv2.bitwise_and(img, mask)
-	return masked_image
-
-def balance_frame(image, width, height):
-	vertices = [(0, height), (width / 4, 3 * height / 4),(3 * width / 4, 3 * height / 4), (width, height),]
-	vertices = np.array([vertices], np.int32)
-
-	blank = np.zeros((height, width, 3), np.uint8)
-	blank[:] = (255, 255, 255)
-	blank_gray = cv2.cvtColor(blank, cv2.COLOR_BGR2GRAY)
-	blank_cropped = crop_roi(blank_gray, vertices)
-	area = cv2.countNonZero(blank_cropped)
-
-	global T
-	ret = None
-	direction = 0
-	for i in range(0, 10):
-		rc, gray = cv2.threshold(image, T, 255, 0)
-		crop = crop_roi(gray, vertices)
-		nwh = cv2.countNonZero(crop)
-		perc = int(100 * nwh / area)
-		# logging.debug(("balance attempt", i, T, perc))
-		if perc > 12:
-			if T > 180:
-				break
-			if direction == -1:
-				ret = crop
-				break
-			T += 10
-			direction = 1
-		elif perc < 3:
-			if T < 40:
-				break
-			if  direction == 1:
-				ret = crop
-				break
-			T -= 10
-			direction = -1
-		else:
-			ret = crop
-			break  
-	return ret
-
-def find_main_countour(image):
-    im2, cnts, hierarchy = cv2.findContours(image, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
-    C = None
-    if cnts is not None and len(cnts) > 0:
-         C = max(cnts, key = cv2.contourArea)
-    if C is None:
-        return None, None
-    rect = cv2.minAreaRect(C)
-    box = cv2.boxPoints(rect)
-    box = np.int0(box)
-    box = geom.order_box(box)
-    return C, box
-'''
-def auto_thresh(img, sigma=0.25):
-	# compute the median of the single channel pixel intensities
-	v = np.median(img)
-	# apply automatic Canny edge detection using the computed median
-	lower = int(max(0, (0.9 - sigma) * v))
-	upper = int(min(255, (1.0 + sigma) * v))
-	ret,th1 = cv2.threshold(img,lower, upper, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-	ret,thresh = cv2.threshold(th1, lower, upper, cv2.THRESH_BINARY_INV)
-	return thresh
-'''
 
 if ROBOT_MODE:
 	a = 0
@@ -189,65 +111,24 @@ while True:
 	if VIDEO_MODE or ROBOT_MODE:
 		frame = vs.read()
 	else:
-		frame = cv2.imread("lines.png")
-		# frame = cv2.imread("lines.jpg")
+		# frame = cv2.imread("lines.png")
+		frame = cv2.imread("blackline1.jpg")
+		# frame = cv2.imread("lab_line_example.jpg")
+		# frame = cv2.imread("lab_line_example_Hflip.jpg")
 		# frame = cv2.imread("curved.jpg")
 		# frame = cv2.imread("curveline.png")
 	frame = imutils.resize(frame, width=FRAME_WIDTH)
-	frame_copy = frame.copy()
-
-	if W is None or H is None:
-		(H, W) = frame.shape[:2]
+	(frame, angle, shift, W, H) = track.handle_frame(frame, None, True)
+	
+	if W is not None and H is not None:
 		(center_x, center_y) = (int(W/2), int(H/2))
-
-	# black = select_black(frame)
-	# gray = cv2.cvtColor(black, cv2.COLOR_BGR2GRAY)
-	gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-	blur = cv2.GaussianBlur(gray, (9,9), 0)
-	'''
-	# Draw contours of lines
-	ret,th1 = cv2.threshold(blur,35,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-	ret,thresh = cv2.threshold(th1, 100, 255, cv2.THRESH_BINARY_INV)
-	# thresh = auto_thresh(blur)
-	mask = cv2.erode(thresh, None, iterations=2)
-	mask = cv2.dilate(mask, None, iterations=2)
-	# im2,contours,hierarchy = cv2.findContours(thresh, 1, cv2.CHAIN_APPROX_NONE)
-	im2,contours,hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-	if len(contours) > 0:
-		c = max(contours, key=cv2.contourArea)
-		M = cv2.moments(c)
-		(cx,cy) = (0,0)
-		if M['m00'] != 0:
-			cx = int(M['m10']/M['m00'])
-			cy = int(M['m01']/M['m00'])
-		cv2.line(frame_copy, (cx,0), (cx,H), (255,0,0), 2)
-		cv2.line(frame_copy, (0,cy), (W,cy), (255,0,0), 2)
-		cv2.drawContours(frame_copy, contours, -1, (0,255,0), 2)
-	'''
-	crop = balance_frame(blur, W, H)
-	cont, box = find_main_countour(crop)
-	# p1, p2 = geom.calc_box_vector(box)
-	# angle = geom.get_vert_angle(p1, p2, W, H)
-	# shift = geom.get_horz_shift(p1[0], W)
-
-	cv2.drawContours(frame, [cont], -1, (0,0,255), 3)
-	cv2.drawContours(frame,[box],0,(255,0,0),2)
-	# cv2.line(frame, p1, p2, (0, 255, 0), 3)
-	# msg_a = "Angle {0}".format(int(angle))
-	# msg_s = "Shift {0}".format(int(shift))
-
-	# cv2.putText(frame, msg_a, (10, 20), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1)
-	# cv2.putText(frame, msg_s, (10, 40), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1)
-
-	cv2.imshow("crop", crop)
-	cv2.imshow("Image", frame)
 	
 	if DEBUG_MODE:
 		cv2.waitKey(0)
 		cv2.destroyAllWindows()
 		break
 
-
+		'''
 	# Continue drawing edges of lines
 	edges = auto_canny(blur)
 	lines = cv2.HoughLinesP(edges, rho, theta, threshold, minLineLength, maxLineGap)
@@ -329,9 +210,14 @@ while True:
 		cv2.waitKey(0)
 		cv2.destroyAllWindows()
 		break
+	'''
 
 	# update the FPS counter
 	fps.update()
+
+	key = cv2.waitKey(1) & 0xFF
+	if key == ord("q"):
+		break
 
 fps.stop()
 print("[INFO] elapsed time: {:.2f}".format(fps.elapsed()))
