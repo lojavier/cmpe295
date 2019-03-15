@@ -17,7 +17,7 @@ def get_horz_shift(x, w):
 
 def get_vert_shift(y, h):
     hh = h / 2
-    return 100 * (hh - y) / hh
+    return 100 * (y - hh) / hh
 
 def calc_rect_area(rect_points):
     a = calc_line_length(rect_points[0], rect_points[1])
@@ -44,13 +44,13 @@ def get_vert_angle(p1, p2, w, h):
                 angle = 180 - angle
     return angle
 
-def get_angle(p1, p2, w, h):
+def get_horz_angle(p2, p1, w, h):
     px1 = p1[0] - w/2
     px2 = p2[0] - w/2
     py1 = h - p1[1]
     py2 = h - p2[1]
     angle = 90
-    if px1 != px2:
+    if py1 != py2:
         a, b = calc_line(px1, py1, px2, py2)
         angle = 0
         if a != 0:

@@ -128,7 +128,6 @@ while True:
 		cv2.destroyAllWindows()
 		break
 
-		'''
 	# Continue drawing edges of lines
 	edges = auto_canny(blur)
 	lines = cv2.HoughLinesP(edges, rho, theta, threshold, minLineLength, maxLineGap)
@@ -210,7 +209,7 @@ while True:
 		cv2.waitKey(0)
 		cv2.destroyAllWindows()
 		break
-	'''
+	
 
 	# update the FPS counter
 	fps.update()
