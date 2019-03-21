@@ -1,7 +1,6 @@
 #!python
 from imutils.video import VideoStream
 from imutils.video import FPS
-
 import numpy as np
 import geom_util as geom
 import braccetto_conf as bconf
@@ -36,7 +35,7 @@ if args["start"] == "l":
 	DIRECTION_STATE = bconf.DIRECTION.LEFT
 	ROBOT_POS_X = bconf.AXIS_RANGE_X[1]
 	ROBOT_POS_Y = int((bconf.AXIS_RANGE_Y[0]+bconf.AXIS_RANGE_Y[1])/2)
-	ROBOT_POS_Z = bconf.AXIS_RANGE_Z[0]
+	ROBOT_POS_Z = bconf.AXIS_RANGE_Z[1]
 
 elif args["start"] == "r":
 	direction_txt = "RIGHT"
@@ -50,14 +49,14 @@ elif args["start"] == "u":
 	DIRECTION_STATE = bconf.DIRECTION.UP
 	ROBOT_POS_X = int((bconf.AXIS_RANGE_X[0]+bconf.AXIS_RANGE_X[1])/2)
 	ROBOT_POS_Y = bconf.AXIS_RANGE_Y[0]
-	ROBOT_POS_Z = bconf.AXIS_RANGE_Z[0]
+	ROBOT_POS_Z = int((bconf.AXIS_RANGE_Z[0]+bconf.AXIS_RANGE_Z[1])/2)
 
 elif args["start"] == "d":
 	direction_txt = "DOWN"
 	DIRECTION_STATE = bconf.DIRECTION.DOWN
 	ROBOT_POS_X = int((bconf.AXIS_RANGE_X[0]+bconf.AXIS_RANGE_X[1])/2)
 	ROBOT_POS_Y = bconf.AXIS_RANGE_Y[1]
-	ROBOT_POS_Z = bconf.AXIS_RANGE_Z[0]
+	ROBOT_POS_Z = int((bconf.AXIS_RANGE_Z[0]+bconf.AXIS_RANGE_Z[1])/2)
 
 else:
 	direction_txt = "DOWN"
@@ -79,6 +78,7 @@ if ROBOT_MODE:
 	    R = abb.Robot(ip=bconf.ROBOT_IP)
 	    print ("\t+ Successfully connected to %s" % (bconf.ROBOT_IP))
 	    print ("\t+ %s" % (R.get_robotinfo()))
+	    # R.set_speed([100,50,50,50])
 	    # R.set_joints([0,0,0,0,0,0])
 	except:
 	    a = 1;
@@ -100,7 +100,8 @@ if ROBOT_MODE:
 	print("ROBOT_POS_X = %s mm, ROBOT_POS_Y = %s mm, ROBOT_POS_Z = %s mm" % (temp_pos_x, temp_pos_y, temp_pos_z))
 	R.set_speed([100,50,50,50])
 	print("Initializing starting position ...")
-	R.set_cartesian([[ROBOT_POS_X, ROBOT_POS_Y, ROBOT_POS_Z], bconf.Q_ORIENTATION])
+	# R.set_cartesian([[ROBOT_POS_X, ROBOT_POS_Y, ROBOT_POS_Z], bconf.Q_ORIENTATION])
+	R.set_cartesian([[1200, 0, 1200], bconf.Q_ORIENTATION])
 	robot_get_cartesian = R.get_cartesian()
 	temp_pos_x = robot_get_cartesian[0][0]
 	temp_pos_y = robot_get_cartesian[0][1]
@@ -124,8 +125,8 @@ while True:
 		# frame = cv2.imread("lab_line_example.jpg")
 		# frame = cv2.imread("lab_line_example_Hflip.jpg")
 		# frame = cv2.imread("circletrack.png")
-		# frame = cv2.imread("test_direction_frame.jpg")
-		frame = cv2.imread("test_line1.jpg")
+		frame = cv2.imread("test_direction_frame.jpg")
+		# frame = cv2.imread("test_line1.jpg")
 		# frame = cv2.imread("test_line2.jpg")
 	frame = imutils.resize(frame, width=bconf.MAX_FRAME_WIDTH)
 
@@ -164,7 +165,8 @@ while True:
 	ret2,th2 = cv2.threshold(th1, bconf.THRESHOLD, 255, cv2.THRESH_BINARY_INV) # invert the pixels of the image frame
 
 	# im2,contours,hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-	im2,contours,hierarchy = cv2.findContours(th2, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+	# im2,contours,hierarchy = cv2.findContours(th2, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+	contours,hierarchy = cv2.findContours(th2, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 	global_contours = copy.deepcopy(contours)
 
 	C = None
@@ -295,18 +297,22 @@ while True:
 		if DIRECTION_STATE == bconf.DIRECTION.LEFT:
 			ROBOT_POS_X = max(temp_pos_x, bconf.AXIS_RANGE_X[0])
 			ROBOT_POS_Y = max(temp_pos_y, bconf.AXIS_RANGE_Y[0]) if endPt[1] < 0 else min(temp_pos_y, bconf.AXIS_RANGE_Y[1])
+			ROBOT_POS_Z = ROBOT_POS_X
 
 		elif DIRECTION_STATE == bconf.DIRECTION.RIGHT:
 			ROBOT_POS_X = min(temp_pos_x, bconf.AXIS_RANGE_X[1])
 			ROBOT_POS_Y = max(temp_pos_y, bconf.AXIS_RANGE_Y[0]) if endPt[1] < 0 else min(temp_pos_y, bconf.AXIS_RANGE_Y[1])
+			ROBOT_POS_Z = ROBOT_POS_X
 
 		elif DIRECTION_STATE == bconf.DIRECTION.UP:
 			ROBOT_POS_X = max(temp_pos_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_pos_x, bconf.AXIS_RANGE_X[1])
 			ROBOT_POS_Y = min(temp_pos_y, bconf.AXIS_RANGE_Y[1])
+			ROBOT_POS_Z = ROBOT_POS_X
 
 		elif DIRECTION_STATE == bconf.DIRECTION.DOWN:
 			ROBOT_POS_X = max(temp_pos_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_pos_x, bconf.AXIS_RANGE_X[1])
 			ROBOT_POS_Y = max(temp_pos_y, bconf.AXIS_RANGE_Y[0])
+			ROBOT_POS_Z = ROBOT_POS_X
 
 		if DEBUG_MODE:
 			print("ROBOT_POS(new): (%s, %s, %s)" % (ROBOT_POS_X, ROBOT_POS_Y, ROBOT_POS_Z))
@@ -320,7 +326,7 @@ while True:
 		# cv2.imshow("blur", blur)
 		# cv2.imshow("th1", th1)
 		# cv2.imshow("th2", th2)
-		# cv2.imshow("contours1", temp1)
+		cv2.imshow("contours1", temp1)
 		cv2.imshow("frame_edit", frame_edit)
 	else:
 		cv2.imshow("frame", frame)
