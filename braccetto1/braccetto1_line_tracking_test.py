@@ -78,7 +78,7 @@ if ROBOT_MODE:
 	    R = abb.Robot(ip=bconf.ROBOT_IP)
 	    print ("\t+ Successfully connected to %s" % (bconf.ROBOT_IP))
 	    print ("\t+ %s" % (R.get_robotinfo()))
-	    # R.set_speed([100,50,50,50])
+	    R.set_speed([500,50,50,50])
 	    # R.set_joints([0,0,0,0,0,0])
 	except:
 	    a = 1;
@@ -98,15 +98,17 @@ if ROBOT_MODE:
 	temp_pos_z = robot_get_cartesian[0][2]
 	# print("robot_get_cartesian = %s" % (robot_get_cartesian))
 	print("ROBOT_POS_X = %s mm, ROBOT_POS_Y = %s mm, ROBOT_POS_Z = %s mm" % (temp_pos_x, temp_pos_y, temp_pos_z))
-	R.set_speed([100,50,50,50])
+	# R.set_speed([100,50,50,50])
 	print("Initializing starting position ...")
-	# R.set_cartesian([[ROBOT_POS_X, ROBOT_POS_Y, ROBOT_POS_Z], bconf.Q_ORIENTATION])
-	R.set_cartesian([[1200, 0, 1200], bconf.Q_ORIENTATION])
+	R.set_cartesian([[ROBOT_POS_X, ROBOT_POS_Y, ROBOT_POS_Z], bconf.Q_ORIENTATION])
+	# R.set_cartesian([[1200, 0, 1200], bconf.Q_ORIENTATION])
+	time.sleep(1.0)
 	robot_get_cartesian = R.get_cartesian()
 	temp_pos_x = robot_get_cartesian[0][0]
 	temp_pos_y = robot_get_cartesian[0][1]
 	temp_pos_z = robot_get_cartesian[0][2]
 	print("ROBOT_POS_X = %s mm, ROBOT_POS_Y = %s mm, ROBOT_POS_Z = %s mm" % (temp_pos_x, temp_pos_y, temp_pos_z))
+	R.set_speed([50,50,50,50])
 	# R.close()
 	# exit()
 
@@ -287,60 +289,64 @@ while True:
 			print("p2: %s d2: % 3d" % (str(gc_p2), d2))
 			print(" startPt: \t%s\n endPt: \t%s" % (str(startPt), str(endPt)))
 			print("ROBOT_POS(old): (%s, %s, %s)" % (ROBOT_POS_X, ROBOT_POS_Y, ROBOT_POS_Z))
-			print(" ratioPt: \t(% 3d, % 3d)" % (int(endPt[0] / bconf.ABB_MM_PX_RATIO), int(endPt[1] / bconf.ABB_MM_PX_RATIO)))
+			print(" ratioPt: \t(% 3d, % 3d, % 3d)" % (int(endPt[0] / bconf.ABB_MM_PX_RATIO_X), int(endPt[1] / bconf.ABB_MM_PX_RATIO_Y), int(endPt[0] / bconf.ABB_MM_PX_RATIO_Z)))
 
 		'''
 			Update the global robot position based on direction and boundaries.
 		'''
-		temp_pos_x = ROBOT_POS_X + int(endPt[0] / bconf.ABB_MM_PX_RATIO)
-		temp_pos_y = ROBOT_POS_Y + int(endPt[1] / bconf.ABB_MM_PX_RATIO)
+		temp_pos_x = ROBOT_POS_X + int(endPt[0] / bconf.ABB_MM_PX_RATIO_X)
+		temp_pos_y = ROBOT_POS_Y + int(endPt[1] / bconf.ABB_MM_PX_RATIO_Y)
+		temp_pos_z = ROBOT_POS_Z + int(endPt[0] / bconf.ABB_MM_PX_RATIO_Z)
 		if DIRECTION_STATE == bconf.DIRECTION.LEFT:
 			ROBOT_POS_X = max(temp_pos_x, bconf.AXIS_RANGE_X[0])
 			ROBOT_POS_Y = max(temp_pos_y, bconf.AXIS_RANGE_Y[0]) if endPt[1] < 0 else min(temp_pos_y, bconf.AXIS_RANGE_Y[1])
-			ROBOT_POS_Z = ROBOT_POS_X
+			ROBOT_POS_Z = max(temp_pos_z, bconf.AXIS_RANGE_Z[0])
 
 		elif DIRECTION_STATE == bconf.DIRECTION.RIGHT:
 			ROBOT_POS_X = min(temp_pos_x, bconf.AXIS_RANGE_X[1])
 			ROBOT_POS_Y = max(temp_pos_y, bconf.AXIS_RANGE_Y[0]) if endPt[1] < 0 else min(temp_pos_y, bconf.AXIS_RANGE_Y[1])
-			ROBOT_POS_Z = ROBOT_POS_X
+			ROBOT_POS_Z = min(temp_pos_z, bconf.AXIS_RANGE_Z[1])
 
 		elif DIRECTION_STATE == bconf.DIRECTION.UP:
 			ROBOT_POS_X = max(temp_pos_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_pos_x, bconf.AXIS_RANGE_X[1])
 			ROBOT_POS_Y = min(temp_pos_y, bconf.AXIS_RANGE_Y[1])
-			ROBOT_POS_Z = ROBOT_POS_X
+			ROBOT_POS_Z = max(temp_pos_z, bconf.AXIS_RANGE_Z[0]) if endPt[0] < 0 else min(temp_pos_z, bconf.AXIS_RANGE_Z[1])
 
 		elif DIRECTION_STATE == bconf.DIRECTION.DOWN:
 			ROBOT_POS_X = max(temp_pos_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_pos_x, bconf.AXIS_RANGE_X[1])
 			ROBOT_POS_Y = max(temp_pos_y, bconf.AXIS_RANGE_Y[0])
-			ROBOT_POS_Z = ROBOT_POS_X
+			ROBOT_POS_Z = max(temp_pos_z, bconf.AXIS_RANGE_Z[0]) if endPt[0] < 0 else min(temp_pos_z, bconf.AXIS_RANGE_Z[1])
 
-		if DEBUG_MODE:
-			print("ROBOT_POS(new): (%s, %s, %s)" % (ROBOT_POS_X, ROBOT_POS_Y, ROBOT_POS_Z))
-
-		if ROBOT_MODE:
-			R.set_cartesian([[ROBOT_POS_X, ROBOT_POS_Y, ROBOT_POS_Z], bconf.Q_ORIENTATION])
-
-		cv2.imshow("frame", frame)
+		# cv2.imshow("frame", frame)
 		# cv2.imshow("crop", crop)
 		# cv2.imshow("gray", gray)
 		# cv2.imshow("blur", blur)
 		# cv2.imshow("th1", th1)
 		# cv2.imshow("th2", th2)
-		cv2.imshow("contours1", temp1)
+		# cv2.imshow("contours1", temp1)
 		cv2.imshow("frame_edit", frame_edit)
+
+		if DEBUG_MODE:
+			print("ROBOT_POS(new): (%s, %s, %s)" % (ROBOT_POS_X, ROBOT_POS_Y, ROBOT_POS_Z))
+			cv2.waitKey(0)
+
+		if ROBOT_MODE:
+			R.set_cartesian([[ROBOT_POS_X, ROBOT_POS_Y, ROBOT_POS_Z], bconf.Q_ORIENTATION])
+
 	else:
 		cv2.imshow("frame", frame)
 
 	fps.update()
 
 	if DEBUG_MODE:
+		pass
 		# cv2.waitKey(0)
-		key = cv2.waitKey(0) & 0xFF
-		if key == ord("s"):
-			# timestamp = str(datetime.datetime.now().strftime("%y%m%d_%H%M%S"))
-			cv2.imwrite('test_direction_'+direction_txt+'.jpg', frame)
-			cv2.imwrite('test_direction_'+direction_txt+'_edit.jpg', frame_edit)
-		break
+		# key = cv2.waitKey(0) & 0xFF
+		# if key == ord("s"):
+		# 	# timestamp = str(datetime.datetime.now().strftime("%y%m%d_%H%M%S"))
+		# 	cv2.imwrite('test_direction_'+direction_txt+'.jpg', frame)
+		# 	cv2.imwrite('test_direction_'+direction_txt+'_edit.jpg', frame_edit)
+		# 	break
 		
 	key = cv2.waitKey(1) & 0xFF
 	if key == ord("q"):
