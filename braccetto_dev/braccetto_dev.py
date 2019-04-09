@@ -1,4 +1,6 @@
 #!python
+# USAGE: python braccetto_dev.py -r n -v n -d y -s u
+
 from imutils.video import VideoStream
 from imutils.video import FPS
 import numpy as np
@@ -78,7 +80,7 @@ if ROBOT_MODE:
 	    R = abb.Robot(ip=bconf.ROBOT_IP)
 	    print ("\t+ Successfully connected to %s" % (bconf.ROBOT_IP))
 	    print ("\t+ %s" % (R.get_robotinfo()))
-	    R.set_speed([500,50,50,50])
+	    R.set_speed([150,50,50,50])
 	    R.set_joints([0,0,0,0,0,0])
 	except:
 	    a = 1;
@@ -171,31 +173,31 @@ while True:
 		(angle,shift) = (0,0)
 		(gc_x, gc_y) = (0,0)
 		if DIRECTION_STATE == bconf.DIRECTION.LEFT:
-			angle = geom.get_horz_angle(p1, p2, W, H)
+			angle = geom.get_angle(p1, p2, W, H, True)
 			shift = geom.get_vert_shift(p1[0], H)
 
 			if angle < 45:
-				DIRECTION_STATE = bconf.DIRECTION.DOWN
-			elif angle > 135:
 				DIRECTION_STATE = bconf.DIRECTION.UP
+			elif angle > 135:
+				DIRECTION_STATE = bconf.DIRECTION.DOWN
 
 			gc_x = centerPos[0] - crop_LRFB[0]
 			gc_y = centerPos[1] - crop_LRFB[1]
 
 		elif DIRECTION_STATE == bconf.DIRECTION.RIGHT:
-			angle = geom.get_horz_angle(p1, p2, W, H)
+			angle = geom.get_angle(p1, p2, W, H, True)
 			shift = geom.get_vert_shift(p1[0], H)
 
 			if angle < 45:
-				DIRECTION_STATE = bconf.DIRECTION.UP
-			elif angle > 135:
 				DIRECTION_STATE = bconf.DIRECTION.DOWN
+			elif angle > 135:
+				DIRECTION_STATE = bconf.DIRECTION.UP
 
 			gc_x = centerPos[0]
 			gc_y = centerPos[1] - crop_LRFB[1]
 
 		elif DIRECTION_STATE == bconf.DIRECTION.UP:
-			angle = geom.get_vert_angle(p1, p2, W, H)
+			angle = geom.get_angle(p1, p2, W, H, False)
 			shift = geom.get_horz_shift(p1[0], W)
 
 			if angle < 45:
@@ -207,7 +209,7 @@ while True:
 			gc_y = (centerPos[1] - crop_LRFB[3])
 
 		elif DIRECTION_STATE == bconf.DIRECTION.DOWN:
-			angle = geom.get_vert_angle(p1, p2, W, H)
+			angle = geom.get_angle(p1, p2, W, H, False)
 			shift = geom.get_horz_shift(p1[0], W)
 
 			if angle < 45:
@@ -268,40 +270,77 @@ while True:
 			endPt = (gc_p1[0]-centerPos[0], centerPos[1]-gc_p1[1])
 
 		if DEBUG_MODE:
+			# ROBOT_POS_Y = 0
 			print("%s" % msg_d)
 			print("%s" % msg_a)
 			print("%s" % msg_s)
 			print("p1: %s d1: %03d" % (str(gc_p1), d1))
 			print("p2: %s d2: % 3d" % (str(gc_p2), d2))
-			print(" startPt: \t%s\n endPt: \t%s" % (str(startPt), str(endPt)))
-			print("ROBOT_POS(old): (%s, %s, %s)" % (ROBOT_POS_X, ROBOT_POS_Y, ROBOT_POS_Z))
-			print(" ratioPt: \t(% 3d, % 3d, % 3d)" % (int(endPt[0] / bconf.ABB_MM_PX_RATIO_X), int(endPt[1] / bconf.ABB_MM_PX_RATIO_Y), int(endPt[0] / bconf.ABB_MM_PX_RATIO_Z)))
+			print("startPt : (%4d, %3d, %4d)" % (startPt[0], startPt[1], startPt[0]))
+			print("  endPt : (%4d, %3d, %4d)" % (endPt[0], endPt[1], endPt[0]))
+			print("ratioPt : (%4d, %3d, %4d)" % (int(endPt[0] * bconf.ABB_MM_PX_RATIO_X), int(endPt[1] * bconf.ABB_MM_PX_RATIO_Y), int(endPt[0] * bconf.ABB_MM_PX_RATIO_Z)))
+			print("old_pos : (%4d, %3d, %4d)" % (ROBOT_POS_X, ROBOT_POS_Y, ROBOT_POS_Z))
 
 		'''
 			Update the global robot position based on direction and boundaries.
+			Convert from CV to ABB.
 		'''
-		temp_pos_x = ROBOT_POS_X + int(endPt[0] / bconf.ABB_MM_PX_RATIO_X)
-		temp_pos_y = ROBOT_POS_Y + int(endPt[1] / bconf.ABB_MM_PX_RATIO_Y)
-		temp_pos_z = ROBOT_POS_Z + int(endPt[0] / bconf.ABB_MM_PX_RATIO_Z)
+		temp_pos_x = ROBOT_POS_X + int(endPt[0] * bconf.ABB_MM_PX_RATIO_X)
+		temp_pos_y = ROBOT_POS_Y + int(endPt[1] * bconf.ABB_MM_PX_RATIO_Y)
+		temp_pos_z = ROBOT_POS_Z + int(endPt[0] * bconf.ABB_MM_PX_RATIO_Z)
+		temp_max_z = bconf.AXIS_RANGE_Z[1]
 		if DIRECTION_STATE == bconf.DIRECTION.LEFT:
-			ROBOT_POS_X = max(temp_pos_x, bconf.AXIS_RANGE_X[0])
+			# ROBOT_POS_X = max(temp_pos_x, bconf.AXIS_RANGE_X[0])
+			# ROBOT_POS_Y = max(temp_pos_y, bconf.AXIS_RANGE_Y[0]) if endPt[1] < 0 else min(temp_pos_y, bconf.AXIS_RANGE_Y[1])
+			# ROBOT_POS_Z = max(temp_pos_z, bconf.AXIS_RANGE_Z[0])
 			ROBOT_POS_Y = max(temp_pos_y, bconf.AXIS_RANGE_Y[0]) if endPt[1] < 0 else min(temp_pos_y, bconf.AXIS_RANGE_Y[1])
-			ROBOT_POS_Z = max(temp_pos_z, bconf.AXIS_RANGE_Z[0])
+			# Adjust Z based on Y
+			if ROBOT_POS_Y < -bconf.AXIS_THRESHOLD_Y or ROBOT_POS_Y > bconf.AXIS_THRESHOLD_Y:
+				temp_max_z = (bconf.AXIS_RANGE_Z[1] - ((ROBOT_POS_Y - bconf.AXIS_THRESHOLD_Y) * bconf.AXIS_Y_Z_RATIO))
+			temp_new_z = min(temp_pos_z, temp_max_z)
+			ROBOT_POS_Z = max(temp_new_z, bconf.AXIS_RANGE_Z[0])
+			# Adjust X based on Z
+			temp_new_x = bconf.AXIS_RANGE_X[1] - ((bconf.AXIS_RANGE_Z[1] - ROBOT_POS_Z) * bconf.AXIS_X_Z_RATIO)
+			ROBOT_POS_X = max(temp_new_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_new_x, bconf.AXIS_RANGE_X[1])
 
 		elif DIRECTION_STATE == bconf.DIRECTION.RIGHT:
-			ROBOT_POS_X = min(temp_pos_x, bconf.AXIS_RANGE_X[1])
+			# ROBOT_POS_X = min(temp_pos_x, bconf.AXIS_RANGE_X[1])
+			# ROBOT_POS_Y = max(temp_pos_y, bconf.AXIS_RANGE_Y[0]) if endPt[1] < 0 else min(temp_pos_y, bconf.AXIS_RANGE_Y[1])
+			# ROBOT_POS_Z = min(temp_pos_z, bconf.AXIS_RANGE_Z[1])
 			ROBOT_POS_Y = max(temp_pos_y, bconf.AXIS_RANGE_Y[0]) if endPt[1] < 0 else min(temp_pos_y, bconf.AXIS_RANGE_Y[1])
-			ROBOT_POS_Z = min(temp_pos_z, bconf.AXIS_RANGE_Z[1])
+			# Adjust Z based on Y
+			if ROBOT_POS_Y < -bconf.AXIS_THRESHOLD_Y or ROBOT_POS_Y > bconf.AXIS_THRESHOLD_Y:
+				temp_max_z = (bconf.AXIS_RANGE_Z[1] - ((ROBOT_POS_Y - bconf.AXIS_THRESHOLD_Y) * bconf.AXIS_Y_Z_RATIO))
+			ROBOT_POS_Z = min(temp_pos_z, temp_max_z)
+			# Adjust X based on Z
+			temp_new_x = bconf.AXIS_RANGE_X[1] - ((bconf.AXIS_RANGE_Z[1] - ROBOT_POS_Z) * bconf.AXIS_X_Z_RATIO)
+			ROBOT_POS_X = max(temp_new_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_new_x, bconf.AXIS_RANGE_X[1])
 
 		elif DIRECTION_STATE == bconf.DIRECTION.UP:
-			ROBOT_POS_X = max(temp_pos_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_pos_x, bconf.AXIS_RANGE_X[1])
+			# ROBOT_POS_X = max(temp_pos_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_pos_x, bconf.AXIS_RANGE_X[1])
+			# ROBOT_POS_Y = min(temp_pos_y, bconf.AXIS_RANGE_Y[1])
+			# ROBOT_POS_Z = max(temp_pos_z, bconf.AXIS_RANGE_Z[0]) if endPt[0] < 0 else min(temp_pos_z, bconf.AXIS_RANGE_Z[1])
 			ROBOT_POS_Y = min(temp_pos_y, bconf.AXIS_RANGE_Y[1])
-			ROBOT_POS_Z = max(temp_pos_z, bconf.AXIS_RANGE_Z[0]) if endPt[0] < 0 else min(temp_pos_z, bconf.AXIS_RANGE_Z[1])
+			# Adjust Z based on Y
+			if ROBOT_POS_Y > bconf.AXIS_THRESHOLD_Y and endPt[0] > 0:
+				temp_max_z = (bconf.AXIS_RANGE_Z[1] - ((ROBOT_POS_Y - bconf.AXIS_THRESHOLD_Y) * bconf.AXIS_Y_Z_RATIO))
+			ROBOT_POS_Z = max(temp_pos_z, bconf.AXIS_RANGE_Z[0]) if endPt[0] < 0 else min(temp_pos_z, temp_max_z)
+			# Adjust X based on Z
+			temp_new_x = bconf.AXIS_RANGE_X[1] - ((bconf.AXIS_RANGE_Z[1] - ROBOT_POS_Z) * bconf.AXIS_X_Z_RATIO)
+			ROBOT_POS_X = max(temp_new_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_new_x, bconf.AXIS_RANGE_X[1])
 
 		elif DIRECTION_STATE == bconf.DIRECTION.DOWN:
-			ROBOT_POS_X = max(temp_pos_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_pos_x, bconf.AXIS_RANGE_X[1])
+			# ROBOT_POS_X = max(temp_pos_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_pos_x, bconf.AXIS_RANGE_X[1])
+			# ROBOT_POS_Y = max(temp_pos_y, bconf.AXIS_RANGE_Y[0])
+			# ROBOT_POS_Z = max(temp_pos_z, bconf.AXIS_RANGE_Z[0]) if endPt[0] < 0 else min(temp_pos_z, bconf.AXIS_RANGE_Z[1])
 			ROBOT_POS_Y = max(temp_pos_y, bconf.AXIS_RANGE_Y[0])
-			ROBOT_POS_Z = max(temp_pos_z, bconf.AXIS_RANGE_Z[0]) if endPt[0] < 0 else min(temp_pos_z, bconf.AXIS_RANGE_Z[1])
+			# Adjust Z based on Y
+			if ROBOT_POS_Y < -bconf.AXIS_THRESHOLD_Y and endPt[0] > 0:
+				temp_max_z = (bconf.AXIS_RANGE_Z[1] - ((ROBOT_POS_Y - bconf.AXIS_THRESHOLD_Y) * bconf.AXIS_Y_Z_RATIO))
+			ROBOT_POS_Z = max(temp_pos_z, bconf.AXIS_RANGE_Z[0]) if endPt[0] < 0 else min(temp_pos_z, temp_max_z)
+			# Adjust X based on Z
+			temp_new_x = bconf.AXIS_RANGE_X[1] - ((bconf.AXIS_RANGE_Z[1] - ROBOT_POS_Z) * bconf.AXIS_X_Z_RATIO)
+			ROBOT_POS_X = max(temp_new_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_new_x, bconf.AXIS_RANGE_X[1])
 
 		# cv2.imshow("frame", frame)
 		# cv2.imshow("crop", crop)
@@ -313,8 +352,10 @@ while True:
 		cv2.imshow("frame_edit", frame_edit)
 
 		if DEBUG_MODE:
-			print("ROBOT_POS(new): (%s, %s, %s)" % (ROBOT_POS_X, ROBOT_POS_Y, ROBOT_POS_Z))
-			cv2.waitKey(0)
+			print("new_pos : (%4d, %3d, %4d)" % (ROBOT_POS_X, ROBOT_POS_Y, ROBOT_POS_Z))
+			key = cv2.waitKey(0) & 0xFF
+			if key == ord("q"):
+				break
 
 		if ROBOT_MODE:
 			R.set_cartesian([[ROBOT_POS_X, ROBOT_POS_Y, ROBOT_POS_Z], bconf.Q_ORIENTATION])

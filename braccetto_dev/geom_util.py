@@ -24,11 +24,21 @@ def calc_rect_area(rect_points):
     b = calc_line_length(rect_points[1], rect_points[2])
     return a * b
 
-def get_vert_angle(p1, p2, w, h):
+def get_angle(p1, p2, w, h, rotate):
     px1 = p1[0] - w/2
     px2 = p2[0] - w/2
+    
     py1 = h - p1[1]
     py2 = h - p2[1]
+
+    if rotate:
+        tempX = px1
+        px1 = py1
+        py1 = -tempX
+        tempX = px2
+        px2 = py2
+        py2 = -tempX
+
     angle = 90
     if px1 != px2:
         a, b = calc_line(px1, py1, px2, py2)
@@ -44,13 +54,15 @@ def get_vert_angle(p1, p2, w, h):
                 angle = 180 - angle
     return angle
 
-def get_horz_angle(p2, p1, w, h):
+def get_vert_angle(p1, p2, w, h):
     px1 = p1[0] - w/2
     px2 = p2[0] - w/2
+    
     py1 = h - p1[1]
     py2 = h - p2[1]
+
     angle = 90
-    if py1 != py2:
+    if px1 != px2:
         a, b = calc_line(px1, py1, px2, py2)
         angle = 0
         if a != 0:

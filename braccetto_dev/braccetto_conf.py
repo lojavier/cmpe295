@@ -3,9 +3,13 @@ from enum import Enum
 
 ROBOT_IP = "192.168.125.1"
 AXIS_RANGE_X = [1000, 1200] # LEFT = 1000 <-> RIGHT = 1200
-AXIS_RANGE_Y = [-650, 650] # DOWN = -750 <-> UP = 750
-AXIS_RANGE_Z = [850, 1050] # lower = 1000 <-> raise = 1200
+AXIS_RANGE_Y = [-600, 600] # DOWN = -600 <-> UP = 600
+AXIS_RANGE_Z = [800, 1200] # lower = 900 <-> raise = 1300
 Q_ORIENTATION = [0,0,1,0] # Quaternion Orientation
+AXIS_THRESHOLD_Y = 300
+
+AXIS_X_Z_RATIO = (AXIS_RANGE_X[1] - AXIS_RANGE_X[0]) / (AXIS_RANGE_Z[1] - AXIS_RANGE_Z[0]) # 0.5
+AXIS_Y_Z_RATIO = AXIS_THRESHOLD_Y / (AXIS_RANGE_Z[1] - AXIS_RANGE_Z[0]) # 0.75
 
 MAX_FRAME_WIDTH = 800
 
@@ -22,7 +26,8 @@ THRESHOLD = 120	 	# Minimum vote it should get for it to be considered as a line
 # maxLineGap = 10		# Maximum allowed gap between line segments to treat them as single line.
 # apertureSize = 3
 
-CROP_RATIO = [0.80, 0.40, 0.40, 0.80]	# [ L/R(x,y), U/D(x,y) ]
-ABB_MM_PX_RATIO_X = 12
-ABB_MM_PX_RATIO_Y = 10
-ABB_MM_PX_RATIO_Z = 12
+CROP_RATIO = [0.60, 0.20, 0.20, 0.60]	# [ L/R (W,H) <-> U/D(W,H) ]
+
+ABB_MM_PX_RATIO_Y = 0.10
+ABB_MM_PX_RATIO_Z = 0.20
+ABB_MM_PX_RATIO_X = ABB_MM_PX_RATIO_Z * AXIS_X_Z_RATIO
