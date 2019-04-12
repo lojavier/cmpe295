@@ -28,6 +28,7 @@ THRESHOLD = 120	 	# Minimum vote it should get for it to be considered as a line
 
 CROP_RATIO = [0.60, 0.20, 0.20, 0.60]	# [ L/R (W,H) <-> U/D(W,H) ]
 
-ABB_MM_PX_RATIO_Y = 0.10
-ABB_MM_PX_RATIO_Z = 0.20
-ABB_MM_PX_RATIO_X = ABB_MM_PX_RATIO_Z * AXIS_X_Z_RATIO
+ROBOT_SPEED = 50
+ABB_MM_PX_RATIO_Y = 0.25
+ABB_MM_PX_RATIO_Z = 0.10
+ABB_MM_PX_RATIO_X = 0.20

@@ -31,6 +31,7 @@ DIRECTION_STATE = None
 ROBOT_POS_X = None
 ROBOT_POS_Y = None
 ROBOT_POS_Z = None
+writer = None
 
 if args["start"] == "l":
 	direction_txt = "LEFT"
@@ -80,7 +81,7 @@ if ROBOT_MODE:
 	    R = abb.Robot(ip=bconf.ROBOT_IP)
 	    print ("\t+ Successfully connected to %s" % (bconf.ROBOT_IP))
 	    print ("\t+ %s" % (R.get_robotinfo()))
-	    R.set_speed([150,50,50,50])
+	    R.set_speed([200,50,50,50])
 	    R.set_joints([0,0,0,0,0,0])
 	except:
 	    a = 1;
@@ -94,25 +95,24 @@ if ROBOT_MODE:
 			exit(-1)
 
 	print("Current robotic arm position ...")
+	time.sleep(0.5)
 	robot_get_cartesian = R.get_cartesian()
 	temp_pos_x = robot_get_cartesian[0][0]
 	temp_pos_y = robot_get_cartesian[0][1]
 	temp_pos_z = robot_get_cartesian[0][2]
-	# print("robot_get_cartesian = %s" % (robot_get_cartesian))
 	print("ROBOT_POS_X = %s mm, ROBOT_POS_Y = %s mm, ROBOT_POS_Z = %s mm" % (temp_pos_x, temp_pos_y, temp_pos_z))
-	# R.set_speed([100,50,50,50])
+
 	print("Initializing starting position ...")
 	R.set_cartesian([[ROBOT_POS_X, ROBOT_POS_Y, ROBOT_POS_Z], bconf.Q_ORIENTATION])
-	# R.set_cartesian([[1200, 0, 1200], bconf.Q_ORIENTATION])
-	time.sleep(1.0)
+	time.sleep(0.5)
 	robot_get_cartesian = R.get_cartesian()
 	temp_pos_x = robot_get_cartesian[0][0]
 	temp_pos_y = robot_get_cartesian[0][1]
 	temp_pos_z = robot_get_cartesian[0][2]
 	print("ROBOT_POS_X = %s mm, ROBOT_POS_Y = %s mm, ROBOT_POS_Z = %s mm" % (temp_pos_x, temp_pos_y, temp_pos_z))
-	R.set_speed([50,50,50,50])
-	R.close()
-	exit()
+	R.set_speed([bconf.ROBOT_SPEED,50,50,50])
+	# R.close()
+	# exit()
 
 if VIDEO_MODE or ROBOT_MODE:
 	vs = VideoStream(src=0).start()
@@ -270,7 +270,6 @@ while True:
 			endPt = (gc_p1[0]-centerPos[0], centerPos[1]-gc_p1[1])
 
 		if DEBUG_MODE:
-			# ROBOT_POS_Y = 0
 			print("%s" % msg_d)
 			print("%s" % msg_a)
 			print("%s" % msg_s)
@@ -290,57 +289,62 @@ while True:
 		temp_pos_z = ROBOT_POS_Z + int(endPt[0] * bconf.ABB_MM_PX_RATIO_Z)
 		temp_max_z = bconf.AXIS_RANGE_Z[1]
 		if DIRECTION_STATE == bconf.DIRECTION.LEFT:
-			# ROBOT_POS_X = max(temp_pos_x, bconf.AXIS_RANGE_X[0])
-			# ROBOT_POS_Y = max(temp_pos_y, bconf.AXIS_RANGE_Y[0]) if endPt[1] < 0 else min(temp_pos_y, bconf.AXIS_RANGE_Y[1])
-			# ROBOT_POS_Z = max(temp_pos_z, bconf.AXIS_RANGE_Z[0])
+			ROBOT_POS_X = max(temp_pos_x, bconf.AXIS_RANGE_X[0])
 			ROBOT_POS_Y = max(temp_pos_y, bconf.AXIS_RANGE_Y[0]) if endPt[1] < 0 else min(temp_pos_y, bconf.AXIS_RANGE_Y[1])
-			# Adjust Z based on Y
-			if ROBOT_POS_Y < -bconf.AXIS_THRESHOLD_Y or ROBOT_POS_Y > bconf.AXIS_THRESHOLD_Y:
-				temp_max_z = (bconf.AXIS_RANGE_Z[1] - ((ROBOT_POS_Y - bconf.AXIS_THRESHOLD_Y) * bconf.AXIS_Y_Z_RATIO))
-			temp_new_z = min(temp_pos_z, temp_max_z)
-			ROBOT_POS_Z = max(temp_new_z, bconf.AXIS_RANGE_Z[0])
-			# Adjust X based on Z
-			temp_new_x = bconf.AXIS_RANGE_X[1] - ((bconf.AXIS_RANGE_Z[1] - ROBOT_POS_Z) * bconf.AXIS_X_Z_RATIO)
-			ROBOT_POS_X = max(temp_new_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_new_x, bconf.AXIS_RANGE_X[1])
+			ROBOT_POS_Z = max(temp_pos_z, bconf.AXIS_RANGE_Z[0])
+			# ROBOT_POS_Y = max(temp_pos_y, bconf.AXIS_RANGE_Y[0]) if endPt[1] < 0 else min(temp_pos_y, bconf.AXIS_RANGE_Y[1])
+			# # Adjust Z based on Y
+			# if ROBOT_POS_Y < -bconf.AXIS_THRESHOLD_Y or ROBOT_POS_Y > bconf.AXIS_THRESHOLD_Y:
+			# 	temp_max_z = (bconf.AXIS_RANGE_Z[1] - ((ROBOT_POS_Y - bconf.AXIS_THRESHOLD_Y) * bconf.AXIS_Y_Z_RATIO))
+			# temp_new_z = min(temp_pos_z, temp_max_z)
+			# ROBOT_POS_Z = max(temp_new_z, bconf.AXIS_RANGE_Z[0])
+			# # Adjust X based on Z
+			# temp_new_x = bconf.AXIS_RANGE_X[1] - ((bconf.AXIS_RANGE_Z[1] - ROBOT_POS_Z) * bconf.AXIS_X_Z_RATIO)
+			# ROBOT_POS_X = max(temp_new_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_new_x, bconf.AXIS_RANGE_X[1])
 
 		elif DIRECTION_STATE == bconf.DIRECTION.RIGHT:
-			# ROBOT_POS_X = min(temp_pos_x, bconf.AXIS_RANGE_X[1])
-			# ROBOT_POS_Y = max(temp_pos_y, bconf.AXIS_RANGE_Y[0]) if endPt[1] < 0 else min(temp_pos_y, bconf.AXIS_RANGE_Y[1])
-			# ROBOT_POS_Z = min(temp_pos_z, bconf.AXIS_RANGE_Z[1])
+			ROBOT_POS_X = min(temp_pos_x, bconf.AXIS_RANGE_X[1])
 			ROBOT_POS_Y = max(temp_pos_y, bconf.AXIS_RANGE_Y[0]) if endPt[1] < 0 else min(temp_pos_y, bconf.AXIS_RANGE_Y[1])
-			# Adjust Z based on Y
-			if ROBOT_POS_Y < -bconf.AXIS_THRESHOLD_Y or ROBOT_POS_Y > bconf.AXIS_THRESHOLD_Y:
-				temp_max_z = (bconf.AXIS_RANGE_Z[1] - ((ROBOT_POS_Y - bconf.AXIS_THRESHOLD_Y) * bconf.AXIS_Y_Z_RATIO))
-			ROBOT_POS_Z = min(temp_pos_z, temp_max_z)
-			# Adjust X based on Z
-			temp_new_x = bconf.AXIS_RANGE_X[1] - ((bconf.AXIS_RANGE_Z[1] - ROBOT_POS_Z) * bconf.AXIS_X_Z_RATIO)
-			ROBOT_POS_X = max(temp_new_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_new_x, bconf.AXIS_RANGE_X[1])
+			ROBOT_POS_Z = min(temp_pos_z, bconf.AXIS_RANGE_Z[1])
+			# ROBOT_POS_Y = max(temp_pos_y, bconf.AXIS_RANGE_Y[0]) if endPt[1] < 0 else min(temp_pos_y, bconf.AXIS_RANGE_Y[1])
+			# # Adjust Z based on Y
+			# if ROBOT_POS_Y < -bconf.AXIS_THRESHOLD_Y or ROBOT_POS_Y > bconf.AXIS_THRESHOLD_Y:
+			# 	temp_max_z = (bconf.AXIS_RANGE_Z[1] - ((ROBOT_POS_Y - bconf.AXIS_THRESHOLD_Y) * bconf.AXIS_Y_Z_RATIO))
+			# ROBOT_POS_Z = min(temp_pos_z, temp_max_z)
+			# # Adjust X based on Z
+			# temp_new_x = bconf.AXIS_RANGE_X[1] - ((bconf.AXIS_RANGE_Z[1] - ROBOT_POS_Z) * bconf.AXIS_X_Z_RATIO)
+			# ROBOT_POS_X = max(temp_new_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_new_x, bconf.AXIS_RANGE_X[1])
 
 		elif DIRECTION_STATE == bconf.DIRECTION.UP:
-			# ROBOT_POS_X = max(temp_pos_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_pos_x, bconf.AXIS_RANGE_X[1])
-			# ROBOT_POS_Y = min(temp_pos_y, bconf.AXIS_RANGE_Y[1])
-			# ROBOT_POS_Z = max(temp_pos_z, bconf.AXIS_RANGE_Z[0]) if endPt[0] < 0 else min(temp_pos_z, bconf.AXIS_RANGE_Z[1])
+			ROBOT_POS_X = max(temp_pos_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_pos_x, bconf.AXIS_RANGE_X[1])
 			ROBOT_POS_Y = min(temp_pos_y, bconf.AXIS_RANGE_Y[1])
-			# Adjust Z based on Y
-			if ROBOT_POS_Y > bconf.AXIS_THRESHOLD_Y and endPt[0] > 0:
-				temp_max_z = (bconf.AXIS_RANGE_Z[1] - ((ROBOT_POS_Y - bconf.AXIS_THRESHOLD_Y) * bconf.AXIS_Y_Z_RATIO))
-			ROBOT_POS_Z = max(temp_pos_z, bconf.AXIS_RANGE_Z[0]) if endPt[0] < 0 else min(temp_pos_z, temp_max_z)
-			# Adjust X based on Z
-			temp_new_x = bconf.AXIS_RANGE_X[1] - ((bconf.AXIS_RANGE_Z[1] - ROBOT_POS_Z) * bconf.AXIS_X_Z_RATIO)
-			ROBOT_POS_X = max(temp_new_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_new_x, bconf.AXIS_RANGE_X[1])
+			ROBOT_POS_Z = max(temp_pos_z, bconf.AXIS_RANGE_Z[0]) if endPt[0] < 0 else min(temp_pos_z, bconf.AXIS_RANGE_Z[1])
+			# ROBOT_POS_Y = min(temp_pos_y, bconf.AXIS_RANGE_Y[1])
+			# # Adjust Z based on Y
+			# if ROBOT_POS_Y > bconf.AXIS_THRESHOLD_Y and endPt[0] > 0:
+			# 	temp_max_z = (bconf.AXIS_RANGE_Z[1] - ((ROBOT_POS_Y - bconf.AXIS_THRESHOLD_Y) * bconf.AXIS_Y_Z_RATIO))
+			# ROBOT_POS_Z = max(temp_pos_z, bconf.AXIS_RANGE_Z[0]) if endPt[0] < 0 else min(temp_pos_z, temp_max_z)
+			# # Adjust X based on Z
+			# temp_new_x = bconf.AXIS_RANGE_X[1] - ((bconf.AXIS_RANGE_Z[1] - ROBOT_POS_Z) * bconf.AXIS_X_Z_RATIO)
+			# ROBOT_POS_X = max(temp_new_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_new_x, bconf.AXIS_RANGE_X[1])
+
+			if ROBOT_POS_Y == bconf.AXIS_RANGE_Y[1]:
+				DIRECTION_STATE = bconf.DIRECTION.DOWN
 
 		elif DIRECTION_STATE == bconf.DIRECTION.DOWN:
-			# ROBOT_POS_X = max(temp_pos_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_pos_x, bconf.AXIS_RANGE_X[1])
-			# ROBOT_POS_Y = max(temp_pos_y, bconf.AXIS_RANGE_Y[0])
-			# ROBOT_POS_Z = max(temp_pos_z, bconf.AXIS_RANGE_Z[0]) if endPt[0] < 0 else min(temp_pos_z, bconf.AXIS_RANGE_Z[1])
+			ROBOT_POS_X = max(temp_pos_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_pos_x, bconf.AXIS_RANGE_X[1])
 			ROBOT_POS_Y = max(temp_pos_y, bconf.AXIS_RANGE_Y[0])
-			# Adjust Z based on Y
-			if ROBOT_POS_Y < -bconf.AXIS_THRESHOLD_Y and endPt[0] > 0:
-				temp_max_z = (bconf.AXIS_RANGE_Z[1] - ((ROBOT_POS_Y - bconf.AXIS_THRESHOLD_Y) * bconf.AXIS_Y_Z_RATIO))
-			ROBOT_POS_Z = max(temp_pos_z, bconf.AXIS_RANGE_Z[0]) if endPt[0] < 0 else min(temp_pos_z, temp_max_z)
-			# Adjust X based on Z
-			temp_new_x = bconf.AXIS_RANGE_X[1] - ((bconf.AXIS_RANGE_Z[1] - ROBOT_POS_Z) * bconf.AXIS_X_Z_RATIO)
-			ROBOT_POS_X = max(temp_new_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_new_x, bconf.AXIS_RANGE_X[1])
+			ROBOT_POS_Z = max(temp_pos_z, bconf.AXIS_RANGE_Z[0]) if endPt[0] < 0 else min(temp_pos_z, bconf.AXIS_RANGE_Z[1])
+			# ROBOT_POS_Y = max(temp_pos_y, bconf.AXIS_RANGE_Y[0])
+			# # Adjust Z based on Y
+			# if ROBOT_POS_Y < -bconf.AXIS_THRESHOLD_Y and endPt[0] > 0:
+			# 	temp_max_z = (bconf.AXIS_RANGE_Z[1] - ((ROBOT_POS_Y - bconf.AXIS_THRESHOLD_Y) * bconf.AXIS_Y_Z_RATIO))
+			# ROBOT_POS_Z = max(temp_pos_z, bconf.AXIS_RANGE_Z[0]) if endPt[0] < 0 else min(temp_pos_z, temp_max_z)
+			# # Adjust X based on Z
+			# temp_new_x = bconf.AXIS_RANGE_X[1] - ((bconf.AXIS_RANGE_Z[1] - ROBOT_POS_Z) * bconf.AXIS_X_Z_RATIO)
+			# ROBOT_POS_X = max(temp_new_x, bconf.AXIS_RANGE_X[0]) if endPt[0] < 0 else min(temp_new_x, bconf.AXIS_RANGE_X[1])
+			if ROBOT_POS_Y == bconf.AXIS_RANGE_Y[0]:
+				DIRECTION_STATE = bconf.DIRECTION.UP
 
 		# cv2.imshow("frame", frame)
 		# cv2.imshow("crop", crop)
@@ -349,13 +353,21 @@ while True:
 		# cv2.imshow("th1", th1)
 		# cv2.imshow("th2", th2)
 		# cv2.imshow("contours1", temp1)
-		cv2.imshow("frame_edit", frame_edit)
+		# cv2.imshow("frame_edit", frame_edit)
+
+		if writer is None:
+			fourcc = cv2.VideoWriter_fourcc(*"MJPG")
+			writer = cv2.VideoWriter("braccetto_dev_test.avi", fourcc, 30, (W, H), True)
+		writer.write(frame_edit)
 
 		if DEBUG_MODE:
 			print("new_pos : (%4d, %3d, %4d)" % (ROBOT_POS_X, ROBOT_POS_Y, ROBOT_POS_Z))
 			key = cv2.waitKey(0) & 0xFF
 			if key == ord("q"):
 				break
+			# elif key == ord("s"):
+			# 	cv2.imwrite("test_left.jpg", frame_edit)
+			# 	break
 
 		if ROBOT_MODE:
 			R.set_cartesian([[ROBOT_POS_X, ROBOT_POS_Y, ROBOT_POS_Z], bconf.Q_ORIENTATION])
@@ -373,6 +385,7 @@ fps.stop()
 print("[INFO] elapsed time: {:.2f}".format(fps.elapsed()))
 print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
 
+writer.release()
 try:
 	vs.stop()
 except:
